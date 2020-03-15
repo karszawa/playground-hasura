@@ -1,0 +1,110 @@
+version: 2
+tables:
+- table:
+    schema: public
+    name: online_users
+  object_relationships:
+  - name: user
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: users
+        column_mapping:
+          id: id
+  select_permissions:
+  - role: user
+    permission:
+      columns:
+      - id
+      - last_seen
+      filter: {}
+- table:
+    schema: public
+    name: todos
+  object_relationships:
+  - name: user
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: users
+        column_mapping:
+          user_id: id
+  insert_permissions:
+  - role: user
+    permission:
+      check:
+        user_id:
+          _eq: X-Hasura-User-Id
+      columns:
+      - is_public
+      - title
+  select_permissions:
+  - role: customer
+    permission:
+      columns:
+      - id
+      - title
+      - is_completed
+      - is_public
+      - created_at
+      - user_id
+      filter: {}
+  - role: user
+    permission:
+      columns:
+      - is_completed
+      - is_public
+      - id
+      - title
+      - user_id
+      - created_at
+      filter:
+        _or:
+        - is_public:
+            _eq: true
+        - user_id:
+            _eq: X-Hasura-User-Id
+  update_permissions:
+  - role: user
+    permission:
+      columns: []
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+  delete_permissions:
+  - role: user
+    permission:
+      filter:
+        user_id:
+          _eq: X-Hasura-User-Id
+- table:
+    schema: public
+    name: users
+  array_relationships:
+  - name: todos
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: todos
+        column_mapping:
+          id: user_id
+  select_permissions:
+  - role: user
+    permission:
+      columns:
+      - id
+      - name
+      - created_at
+      - last_seen
+      filter: {}
+  update_permissions:
+  - role: user
+    permission:
+      columns:
+      - last_seen
+      filter:
+        id:
+          _eq: X-Hasura-User-Id
